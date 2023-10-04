@@ -5,6 +5,7 @@ const path = require('path');
 const webpack = require('webpack');
 const resolve = require('resolve');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const ModuleFederationPlugin = require('webpack/lib/container/ModuleFederationPlugin');
 const CaseSensitivePathsPlugin = require('case-sensitive-paths-webpack-plugin');
 const InlineChunkHtmlPlugin = require('react-dev-utils/InlineChunkHtmlPlugin');
 const TerserPlugin = require('terser-webpack-plugin');
@@ -190,14 +191,15 @@ module.exports = function (webpackEnv) {
     target: ['browserslist'],
     // Webpack noise constrained to errors and warnings
     stats: 'errors-warnings',
-    mode: isEnvProduction ? 'production' : isEnvDevelopment && 'development',
+    mode: 'development', // isEnvProduction ? 'production' : isEnvDevelopment && 'development',
     // Stop compilation early in production
     bail: isEnvProduction,
-    devtool: isEnvProduction
-      ? shouldUseSourceMap
-        ? 'source-map'
-        : false
-      : isEnvDevelopment && 'cheap-module-source-map',
+    devtool: false,
+    // devtool: isEnvProduction
+    //   ? shouldUseSourceMap
+    //     ? 'source-map'
+    //     : false
+    //   : isEnvDevelopment && 'cheap-module-source-map',
     // These are the "entry points" to our application.
     // This means they will be the "root" imports that are included in JS bundle.
     entry: paths.appIndexJs,
@@ -246,51 +248,51 @@ module.exports = function (webpackEnv) {
       level: 'none',
     },
     optimization: {
-      minimize: isEnvProduction,
-      minimizer: [
-        // This is only used in production mode
-        new TerserPlugin({
-          terserOptions: {
-            parse: {
-              // We want terser to parse ecma 8 code. However, we don't want it
-              // to apply any minification steps that turns valid ecma 5 code
-              // into invalid ecma 5 code. This is why the 'compress' and 'output'
-              // sections only apply transformations that are ecma 5 safe
-              // https://github.com/facebook/create-react-app/pull/4234
-              ecma: 8,
-            },
-            compress: {
-              ecma: 5,
-              warnings: false,
-              // Disabled because of an issue with Uglify breaking seemingly valid code:
-              // https://github.com/facebook/create-react-app/issues/2376
-              // Pending further investigation:
-              // https://github.com/mishoo/UglifyJS2/issues/2011
-              comparisons: false,
-              // Disabled because of an issue with Terser breaking valid code:
-              // https://github.com/facebook/create-react-app/issues/5250
-              // Pending further investigation:
-              // https://github.com/terser-js/terser/issues/120
-              inline: 2,
-            },
-            mangle: {
-              safari10: true,
-            },
-            // Added for profiling in devtools
-            keep_classnames: isEnvProductionProfile,
-            keep_fnames: isEnvProductionProfile,
-            output: {
-              ecma: 5,
-              comments: false,
-              // Turned on because emoji and regex is not minified properly using default
-              // https://github.com/facebook/create-react-app/issues/2488
-              ascii_only: true,
-            },
-          },
-        }),
-        // This is only used in production mode
-        new CssMinimizerPlugin(),
-      ],
+      minimize: false, //isEnvProduction,
+      // minimizer: [
+      //   // This is only used in production mode
+      //   new TerserPlugin({
+      //     terserOptions: {
+      //       parse: {
+      //         // We want terser to parse ecma 8 code. However, we don't want it
+      //         // to apply any minification steps that turns valid ecma 5 code
+      //         // into invalid ecma 5 code. This is why the 'compress' and 'output'
+      //         // sections only apply transformations that are ecma 5 safe
+      //         // https://github.com/facebook/create-react-app/pull/4234
+      //         ecma: 8,
+      //       },
+      //       compress: {
+      //         ecma: 5,
+      //         warnings: false,
+      //         // Disabled because of an issue with Uglify breaking seemingly valid code:
+      //         // https://github.com/facebook/create-react-app/issues/2376
+      //         // Pending further investigation:
+      //         // https://github.com/mishoo/UglifyJS2/issues/2011
+      //         comparisons: false,
+      //         // Disabled because of an issue with Terser breaking valid code:
+      //         // https://github.com/facebook/create-react-app/issues/5250
+      //         // Pending further investigation:
+      //         // https://github.com/terser-js/terser/issues/120
+      //         inline: 2,
+      //       },
+      //       mangle: {
+      //         safari10: true,
+      //       },
+      //       // Added for profiling in devtools
+      //       keep_classnames: isEnvProductionProfile,
+      //       keep_fnames: isEnvProductionProfile,
+      //       output: {
+      //         ecma: 5,
+      //         comments: false,
+      //         // Turned on because emoji and regex is not minified properly using default
+      //         // https://github.com/facebook/create-react-app/issues/2488
+      //         ascii_only: true,
+      //       },
+      //     },
+      //   }),
+      //   // This is only used in production mode
+      //   new CssMinimizerPlugin(),
+      // ],
     },
     resolve: {
       // This allows you to set a fallback for where webpack should look for modules.
@@ -747,6 +749,22 @@ module.exports = function (webpackEnv) {
             },
           },
         }),
+        new ModuleFederationPlugin({
+          remotes: {
+            container: 'containerApp@http://localhost:8081/remoteEntry.js',
+          },
+          shared: {
+            react: {
+              singleton: true,
+            },
+            'react-dom': {
+              singleton: true,
+            },
+            axios: {
+            },
+            'js-cookie': {},
+          },
+        })
     ].filter(Boolean),
     // Turn off performance processing because we utilize
     // our own hints via the FileSizeReporter
