@@ -761,6 +761,7 @@ module.exports = function (webpackEnv) {
               singleton: true,
             },
             axios: {
+              requiredVersion: '^2.0.0',
             },
             'js-cookie': {},
           },
