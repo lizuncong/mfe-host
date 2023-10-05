@@ -760,9 +760,7 @@ module.exports = function (webpackEnv) {
             'react-dom': {
               singleton: true,
             },
-            axios: {
-              requiredVersion: '^2.0.0',
-            },
+            axios: {},
             'js-cookie': {},
           },
         })
