@@ -1,5 +1,5 @@
 import("container/public-path").then((res) => {
   console.log("res...", res);
-  res.set("/your-public-path");
+  res.set("http://localhost:8081/");
   import("./bootstrap");
 });
