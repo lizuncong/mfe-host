@@ -750,8 +750,34 @@ module.exports = function (webpackEnv) {
           },
         }),
         new ModuleFederationPlugin({
+          // remotes: {
+          //   container: 'containerApp@http://localhost:8081/remoteEntry.js',
+          // },
           remotes: {
-            container: 'containerApp@http://localhost:8081/remoteEntry.js',
+            container: `promise new Promise(resolve => {
+              const timeStamp = Date.now();
+              const remoteUrlWithTimeStamp = 'http://localhost:8081/remoteEntry.js?time=' + timeStamp;
+              const script = document.createElement('script')
+              script.src = remoteUrlWithTimeStamp
+              script.onload = () => {
+                // the injected script has loaded and is available on window
+                // we can now resolve this Promise
+                const proxy = {
+                  get: (request) => window.containerApp.get(request),
+                  init: (arg) => {
+                    try {
+                      return window.containerApp.init(arg)
+                    } catch(e) {
+                      console.log('remote container already initialized')
+                    }
+                  }
+                }
+                resolve(proxy)
+              }
+              // inject this script with the src set to the versioned remoteEntry.js
+              document.head.appendChild(script);
+            })
+            ` 
           },
           shared: {
             react: {
